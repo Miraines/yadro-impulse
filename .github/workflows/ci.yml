@@ -1,0 +1,51 @@
+﻿name: Go CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Cache modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ${{ env.GOMODCACHE }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Verify code (go vet)
+        run: go vet ./...
+
+      - name: Run tests with coverage
+        run: |
+          go test ./... -coverprofile=cover.out
+          go tool cover -func=cover.out | tail -n1
+        env:
+          CGO_ENABLED: 0
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: cover.out
+
+      - name: Build static binary
+        run: |
+          go build -ldflags="-s -w" -o bin/biathlon ./cmd
+          ls -lh bin
