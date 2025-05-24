@@ -47,5 +47,5 @@ jobs:
 
       - name: Build static binary
         run: |
-          go build -ldflags="-s -w" -o bin/biathlon ./cmd
+          go build -ldflags="-s -w" -o bin/biathlon ./cmd/biathlon
           ls -lh bin
